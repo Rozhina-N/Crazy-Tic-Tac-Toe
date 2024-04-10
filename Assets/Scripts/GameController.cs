@@ -13,6 +13,9 @@ public class GameController : MonoBehaviour
     public int[] markedSpaces; // id which space is marked by which player
     public GameObject[] winningBoard; // shows the winner (and buttons)
     public GameObject endPanel; // button highlight fix
+    public AudioSource buttonClickAudio; // button click sound
+    public AudioSource playerWinAudio; // player win sound
+    public AudioSource playerLossAudio; // player loss sound
 
     // Start is called before the first frame update
     void Start()
@@ -22,7 +25,7 @@ public class GameController : MonoBehaviour
 
     void GameSetup()
     {
-        whoTurn = 0;
+/*        whoTurn = 0;*/
         turnCount = 0;
         turnIcons[0].SetActive(true);
         turnIcons[1].SetActive(false);
@@ -55,7 +58,11 @@ public class GameController : MonoBehaviour
 
         if (turnCount > 4)
         {
-            winnercheck();
+            bool isWinner = winnercheck();
+            if (turnCount == 9 && isWinner == false)
+            {
+                Tie();
+            }
         }
 
         if (whoTurn == 0)
@@ -72,7 +79,12 @@ public class GameController : MonoBehaviour
         }
     }
 
-    void winnercheck()
+    public void PlayButtonSound()
+    {
+        buttonClickAudio.Play();
+    }
+
+    bool winnercheck()
     {
         int s1 = markedSpaces[0] + markedSpaces[1] + markedSpaces[2];
         int s2 = markedSpaces[3] + markedSpaces[4] + markedSpaces[5];
@@ -90,25 +102,69 @@ public class GameController : MonoBehaviour
             if (solutions[i] == 3 * (whoTurn + 1))
             {
                 WinnerDisplay(i);
-                return;
+                return true;
 
             }
         }
+        return false;
     }
 
     void WinnerDisplay(int indexIn)
     {
+        turnIcons[0].SetActive(false);
+        turnIcons[1].SetActive(false);
+
         endPanel.gameObject.SetActive(true);
 
         if (whoTurn == 0)
         {
             winningBoard[0].SetActive(true);
+            playerWinAudio.Play();
         }
         else if (whoTurn == 1)
         {
             winningBoard[1].SetActive(true);
+            playerWinAudio.Play();
         }
 
     }
+    void Tie()
+    {
+        turnIcons[0].SetActive(false);
+        turnIcons[1].SetActive(false);
 
+        endPanel.gameObject.SetActive(true);
+        winningBoard[2].SetActive(true);
+        playerLossAudio.Play();
+    }
+
+    public void Rematch()
+    {
+        GameSetup();
+        for (int i = 0; i < winningBoard.Length; i++)
+        {
+            winningBoard[i].SetActive(false);
+        }
+
+        if (whoTurn == 1)
+        {
+/*            whoTurn = 0;*/
+            turnIcons[0].SetActive(false);
+            turnIcons[1].SetActive(true);
+        }
+        
+        else if (whoTurn == 0)
+        {
+/*            whoTurn = 1;*/
+            turnIcons[0].SetActive(true);
+            turnIcons[1].SetActive(false);
+        }
+
+        endPanel.gameObject.SetActive(false);
+    }
+
+    public void QuitGame()
+    {
+        Application.Quit();
+    }
 }
