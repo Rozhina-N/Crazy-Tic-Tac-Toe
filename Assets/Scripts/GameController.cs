@@ -1,10 +1,12 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class GameController : MonoBehaviour
 {
+
     public int turnCount; // counts the number of turns played
     public int[] markedSpaces; // id which space is marked by which player
 
@@ -12,20 +14,14 @@ public class GameController : MonoBehaviour
     public Sprite[] playIcons; // 0 = x icon and 1 = o icon
     public Button[] tictactoeSpaces; //playable spaces
 
+    public int boardID = -1;
+
     void Start()
     {
         MiniboardSetup();
     }
 
-    private void Update()
-    {
-        if (GameManager.instance.isEnded == true)
-        {
-            MiniboardSetup();
-        }
-    }
-
-    void MiniboardSetup()
+    public void MiniboardSetup()
     {
         for (int i = 0; i < tictactoeSpaces.Length; i++)
         {
@@ -37,22 +33,25 @@ public class GameController : MonoBehaviour
         {
             markedSpaces[i] = -100;
         }
-        GameManager.instance.isEnded = false;
+
     }
 
-    public void TicTacToeButton(int WhichNumber)
+    public void TicTacToeButton(int buttonIndex)
     {
-        tictactoeSpaces[WhichNumber].image.sprite = playIcons[GameManager.instance.whoTurn];
-        tictactoeSpaces[WhichNumber].interactable = false;
+        if (GameManager.instance.whichBoard != boardID && GameManager.instance.allActive == false)
+            return;
+
+        tictactoeSpaces[buttonIndex].image.sprite = playIcons[GameManager.instance.whoTurn];
+        tictactoeSpaces[buttonIndex].interactable = false;
         turnCount++;
 
-        markedSpaces[WhichNumber] = GameManager.instance.whoTurn + 1;
+        markedSpaces[buttonIndex] = GameManager.instance.whoTurn + 1;
 
         bool isWinner = winnercheck();
 
         if (isWinner == true)
         {
-            GameManager.instance.MiniboardWinner();
+            GameManager.instance.MiniboardWinner(boardID);
 
             for (int i = 0; i < tictactoeSpaces.Length; i++)
             {
@@ -63,13 +62,14 @@ public class GameController : MonoBehaviour
             }
         }
 
-        GameManager.instance.whichBoard = WhichNumber;
+        GameManager.instance.whichBoard = buttonIndex;
 
         if (turnCount == 9 && isWinner == false)
         {
             Tie();
         }
 
+        GameManager.instance.allActive = false;
         GameManager.instance.SwitchTurn();
 
 
@@ -101,6 +101,7 @@ public class GameController : MonoBehaviour
 
     void Tie()
     {
+        GameManager.instance.isTied[boardID] = 1;
         GameManager.instance.PlayLossSound();
     }
 }

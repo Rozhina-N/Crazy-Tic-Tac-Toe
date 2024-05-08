@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -11,7 +12,9 @@ public class GameManager : MonoBehaviour
     public int whoTurn; // 0 = x & 1 = o
     public int turnCount; // counts the number of turns played (min for final is 15)
     public int[] miniboardID; // board id
-    public int whichBoard;
+    public int whichBoard; // which board is active
+
+    public int[] isTied; // check if the game is tied
 
     public GameObject[] turnIcons; // displays whos turn it is
     public GameObject[] winningBoard; // shows the winner (and buttons)
@@ -26,7 +29,7 @@ public class GameManager : MonoBehaviour
     public Sprite[] miniboardWinner; // miniboard winner sprite
     public Sprite Empty; // empty sprite
 
-    public bool isEnded; // is the game ended
+    public bool allActive = false;
 
     private void Awake()
     {
@@ -39,11 +42,13 @@ public class GameManager : MonoBehaviour
         GameSetup();
     }
 
+
     void GameSetup()
     {
         turnCount = 0;
         turnIcons[0].SetActive(true);
         turnIcons[1].SetActive(false);
+        allActive = true;
 
         for (int i = 0; i < miniboard.Length; i++)
         {
@@ -62,6 +67,8 @@ public class GameManager : MonoBehaviour
     public void SwitchTurn()
     {
         winnercheck();
+        TieCheck();
+
         turnCount++;
 
         for (int i = 0; i < miniboard.Length; i++)
@@ -73,18 +80,20 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        if (miniboard[whichBoard].GetComponent<Image>().sprite == Empty)
+        if (miniboard[whichBoard].GetComponent<Image>().sprite == Empty && isTied[whichBoard] == 0)
         {
             miniboard[whichBoard].GetComponent<Image>().sprite = gridHighlight;
+            
         }
 
         else
         {
             for (int i = 0; i < miniboard.Length; i++)
             {
-                if (miniboard[i].GetComponent<Image>().sprite == Empty)
+                if (miniboard[i].GetComponent<Image>().sprite == Empty && isTied[i] == 0)
                 {
                     miniboard[i].GetComponent<Image>().sprite = gridHighlight;
+                    allActive = true;
                 }
             }
         }
@@ -103,18 +112,19 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    public void MiniboardWinner()
+    public void MiniboardWinner(int winnerIndex)
     {
-        miniboardID[whichBoard] = whoTurn + 1;
+        miniboardID[winnerIndex] = whoTurn + 1;
+        Debug.Log(whichBoard);
 
         if (whoTurn == 0)
         {
-            miniboard[whichBoard].GetComponent<Image>().sprite = miniboardWinner[0];
+            miniboard[winnerIndex].GetComponent<Image>().sprite = miniboardWinner[0];
             PlayWinSound();
         }
         else if (whoTurn == 1)
         {
-            miniboard[GameManager.instance.whichBoard].GetComponent<Image>().sprite = GameManager.instance.miniboardWinner[1];
+            miniboard[winnerIndex].GetComponent<Image>().sprite = miniboardWinner[1];
             PlayWinSound();
         }
     }
@@ -179,23 +189,30 @@ public class GameManager : MonoBehaviour
 
     }
 
-    void Tie()
+    void TieCheck()
     {
-        turnIcons[0].SetActive(false);
-        turnIcons[1].SetActive(false);
+        if (isTied.All(x => x == 1))
+        {
+            turnIcons[0].SetActive(false);
+            turnIcons[1].SetActive(false);
 
-        endPanel.gameObject.SetActive(true);
-        winningBoard[2].SetActive(true);
-        playerLossAudio.Play();
+            endPanel.gameObject.SetActive(true);
+            winningBoard[2].SetActive(true);
+            playerLossAudio.Play();
+        }
+
     }
 
     public void Rematch()
     {
-        isEnded = true;
         GameSetup();
         for (int i = 0; i < winningBoard.Length; i++)
         {
             winningBoard[i].SetActive(false);
+        }
+        for (int i = 0; i < miniboard.Length; i++)
+        {
+            miniboard[i].GetComponent<GameController>().MiniboardSetup();
         }
 
         if (whoTurn == 1)
