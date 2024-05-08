@@ -13,13 +13,15 @@ public class GameManager : MonoBehaviour
     public int turnCount; // counts the number of turns played (min for final is 15)
     public int[] miniboardID; // board id
     public int whichBoard; // which board is active
-
     public int[] isTied; // check if the game is tied
 
     public GameObject[] turnIcons; // displays whos turn it is
     public GameObject[] winningBoard; // shows the winner (and buttons)
     public GameObject endPanel; // button highlight fix
     public GameObject[] miniboard; //playable boards
+    public GameObject mainGrid; // main grid
+    public GameObject startPanel; // start panel
+    public GameObject homeUI; // home UI
 
     public AudioSource buttonClickAudio; // button click sound
     public AudioSource playerWinAudio; // player win sound
@@ -39,12 +41,20 @@ public class GameManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        GameSetup();
+        
     }
 
-
-    void GameSetup()
+    public void StartGame()
     {
+        startPanel.SetActive(true);
+    }
+
+    public void GameSetup()
+    {
+        homeUI.SetActive(false);
+        startPanel.SetActive(false);
+        mainGrid.SetActive(true);
+
         turnCount = 0;
         turnIcons[0].SetActive(true);
         turnIcons[1].SetActive(false);
