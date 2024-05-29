@@ -245,4 +245,25 @@ public class GameManager : MonoBehaviour
         Application.Quit();
     }
 
+    public void Home()
+    {
+        GameSetup();
+
+        for (int i = 0; i < winningBoard.Length; i++)
+        {
+            winningBoard[i].SetActive(false);
+        }
+        for (int i = 0; i < miniboard.Length; i++)
+        {
+            miniboard[i].GetComponent<GameController>().MiniboardSetup();
+        }
+
+        homeUI.SetActive(true);
+        mainGrid.SetActive(false);
+        startPanel.SetActive(false);
+        endPanel.gameObject.SetActive(false);
+        turnIcons[0].SetActive(false);
+        turnIcons[1].SetActive(false);
+    }
+
 }

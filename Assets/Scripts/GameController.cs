@@ -23,9 +23,12 @@ public class GameController : MonoBehaviour
 
     public void MiniboardSetup()
     {
+        turnCount = 0;
+
         for (int i = 0; i < tictactoeSpaces.Length; i++)
         {
             tictactoeSpaces[i].interactable = true;
+            tictactoeSpaces[i].gameObject.SetActive(true);
             tictactoeSpaces[i].GetComponent<Image>().sprite = GameManager.instance.Empty;
 
         }
