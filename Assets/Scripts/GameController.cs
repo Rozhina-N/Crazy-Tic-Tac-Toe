@@ -1,8 +1,10 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 using UnityEngine;
 using UnityEngine.UI;
+using static UnityEngine.UIElements.UxmlAttributeDescription;
 
 public class GameController : MonoBehaviour
 {
@@ -50,6 +52,8 @@ public class GameController : MonoBehaviour
 
         markedSpaces[buttonIndex] = GameManager.instance.whoTurn + 1;
 
+        SaveGameState(GameManager.instance.GameID, GameManager.instance.turnCount, GameManager.instance.whoTurn, boardID, buttonIndex);
+
         bool isWinner = winnercheck();
 
         if (isWinner == true)
@@ -76,6 +80,19 @@ public class GameController : MonoBehaviour
         GameManager.instance.SwitchTurn();
 
 
+    }
+
+    public void SaveGameState(int sGameID, int sTurnCount, int sWhoTurn, int sBoardID, int sTicTacToeSpaces)
+    {
+        string path = @"C:\Users\roosn\OneDrive\Bureaublad\SaveFolder\savegame_" + GameManager.instance.GameID + ".txt";
+        StreamWriter writer = new StreamWriter(path, true);
+        writer.Write(sGameID + " ");
+        writer.Write(sTurnCount + " ");
+        writer.Write(sWhoTurn + " ");
+        writer.Write(sBoardID + " ");
+        writer.Write(sTicTacToeSpaces);
+        writer.WriteLine();
+        writer.Close();
     }
 
     bool winnercheck()

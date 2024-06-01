@@ -14,6 +14,7 @@ public class GameManager : MonoBehaviour
     public int[] miniboardID; // board id
     public int whichBoard; // which board is active
     public int[] isTied; // check if the game is tied
+    public int GameID = 0; // game id
 
     public GameObject[] turnIcons; // displays whos turn it is
     public GameObject[] winningBoard; // shows the winner (and buttons)
@@ -51,6 +52,8 @@ public class GameManager : MonoBehaviour
 
     public void GameSetup()
     {
+        GameID++;
+
         homeUI.SetActive(false);
         startPanel.SetActive(false);
         mainGrid.SetActive(true);
