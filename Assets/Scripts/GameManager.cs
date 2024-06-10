@@ -1,272 +1,339 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Xml.Linq;
 using UnityEngine;
 using UnityEngine.UI;
+using Mono.Data.Sqlite;
 
-
-public class GameManager : MonoBehaviour
+namespace CrazyTicTacToe
 {
-    public static GameManager instance;
 
-    public int whoTurn; // 0 = x & 1 = o
-    public int turnCount; // counts the number of turns played (min for final is 15)
-    public int[] miniboardID; // board id
-    public int whichBoard; // which board is active
-    public int[] isTied; // check if the game is tied
-    public int GameID = 0; // game id
-
-    public GameObject[] turnIcons; // displays whos turn it is
-    public GameObject[] winningBoard; // shows the winner (and buttons)
-    public GameObject endPanel; // button highlight fix
-    public GameObject[] miniboard; //playable boards
-    public GameObject mainGrid; // main grid
-    public GameObject startPanel; // start panel
-    public GameObject homeUI; // home UI
-
-    public AudioSource buttonClickAudio; // button click sound
-    public AudioSource playerWinAudio; // player win sound
-    public AudioSource playerLossAudio; // player loss sound
-
-    public Sprite gridHighlight; // highlight the miniboard
-    public Sprite[] miniboardWinner; // miniboard winner sprite
-    public Sprite Empty; // empty sprite
-
-    public bool allActive = false;
-
-    private void Awake()
+    public class GameManager : MonoBehaviour
     {
-        instance = this;
-    }
+        public static GameManager instance;
 
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
+        public int whoTurn; // 0 = x & 1 = o
+        public int turnCount; // counts the number of turns played (min for final is 15)
+        public int[] miniboardID; // board id
+        public int whichBoard; // which board is active
+        public int[] isTied; // check if the game is tied
+        public int GameID = 0; // game id
+        /*    public int sBoardID; // board id
+            public int sSpaceID; // space id*/
 
-    public void StartGame()
-    {
-        startPanel.SetActive(true);
-    }
+        public string dbName;
 
-    public void GameSetup()
-    {
-        GameID++;
+        public GameObject[] turnIcons; // displays whos turn it is
+        public GameObject[] winningBoard; // shows the winner (and buttons)
+        public GameObject endPanel; // button highlight fix
+        public GameObject[] miniboard; //playable boards
+        public GameObject mainGrid; // main grid
+        public GameObject startPanel; // start panel
+        public GameObject homeUI; // home UI
 
-        homeUI.SetActive(false);
-        startPanel.SetActive(false);
-        mainGrid.SetActive(true);
+        public AudioSource buttonClickAudio; // button click sound
+        public AudioSource playerWinAudio; // player win sound
+        public AudioSource playerLossAudio; // player loss sound
 
-        turnCount = 0;
-        turnIcons[0].SetActive(true);
-        turnIcons[1].SetActive(false);
-        allActive = true;
+        public Sprite gridHighlight; // highlight the miniboard
+        public Sprite[] miniboardWinner; // miniboard winner sprite
+        public Sprite Empty; // empty sprite
 
-        for (int i = 0; i < miniboard.Length; i++)
+        public bool allActive = false;
+
+        private void Awake()
         {
-            miniboard[i].SetActive(true); // Enable the miniboard
-            miniboard[i].GetComponent<Image>().color = new Color(1, 1, 1, 1);
-            miniboard[i].GetComponent<Image>().sprite = gridHighlight;
+            instance = this;
+            dbName = "URI=file:" + Application.dataPath + "/Saves.db";
         }
 
-        miniboardID = new int[9];
-        for (int i = 0; i < miniboardID.Length; i++)
+        // Start is called before the first frame update
+        void Start()
         {
-            miniboardID[i] = -100;
-        }
-    }
 
-    public void SwitchTurn()
-    {
-        winnercheck();
-        TieCheck();
-
-        turnCount++;
-
-        for (int i = 0; i < miniboard.Length; i++)
-        {
-            if (miniboard[i].GetComponent<Image>().sprite == gridHighlight)
-            {
-                miniboard[i].GetComponent<Image>().sprite = Empty;
-
-            }
         }
 
-        if (miniboard[whichBoard].GetComponent<Image>().sprite == Empty && isTied[whichBoard] == 0)
+        public void StartGame()
         {
-            miniboard[whichBoard].GetComponent<Image>().sprite = gridHighlight;
-            
+            startPanel.SetActive(true);
         }
 
-        else
+        public void GameSetup()
         {
-            for (int i = 0; i < miniboard.Length; i++)
-            {
-                if (miniboard[i].GetComponent<Image>().sprite == Empty && isTied[i] == 0)
-                {
-                    miniboard[i].GetComponent<Image>().sprite = gridHighlight;
-                    allActive = true;
-                }
-            }
-        }
+            GameID++;
+            CreateDB();
 
-        if (whoTurn == 0)
-        {
-            whoTurn = 1;
-            turnIcons[0].SetActive(false);
-            turnIcons[1].SetActive(true);
-        }
-        else
-        {
-            whoTurn = 0;
+            homeUI.SetActive(false);
+            startPanel.SetActive(false);
+            mainGrid.SetActive(true);
+
+            turnCount = 0;
             turnIcons[0].SetActive(true);
             turnIcons[1].SetActive(false);
-        }
-    }
+            allActive = true;
 
-    public void MiniboardWinner(int winnerIndex)
-    {
-        miniboardID[winnerIndex] = whoTurn + 1;
-        Debug.Log(whichBoard);
-
-        if (whoTurn == 0)
-        {
-            miniboard[winnerIndex].GetComponent<Image>().sprite = miniboardWinner[0];
-            PlayWinSound();
-        }
-        else if (whoTurn == 1)
-        {
-            miniboard[winnerIndex].GetComponent<Image>().sprite = miniboardWinner[1];
-            PlayWinSound();
-        }
-    }
-
-    public void PlayButtonSound()
-    {
-        buttonClickAudio.Play();
-    }
-
-    public void PlayWinSound()
-    {
-        playerWinAudio.Play();
-    }
-
-    public void PlayLossSound()
-    {
-        playerLossAudio.Play();
-    }
-
-    bool winnercheck()
-    {
-        int s1 = miniboardID[0] + miniboardID[1] + miniboardID[2];
-        int s2 = miniboardID[3] + miniboardID[4] + miniboardID[5];
-        int s3 = miniboardID[6] + miniboardID[7] + miniboardID[8];
-        int s4 = miniboardID[0] + miniboardID[3] + miniboardID[6];
-        int s5 = miniboardID[1] + miniboardID[4] + miniboardID[7];
-        int s6 = miniboardID[2] + miniboardID[5] + miniboardID[8];
-        int s7 = miniboardID[0] + miniboardID[4] + miniboardID[8];
-        int s8 = miniboardID[2] + miniboardID[4] + miniboardID[6];
-
-        var solutions = new int[] { s1, s2, s3, s4, s5, s6, s7, s8 };
-
-        for (int i = 0; i < solutions.Length; i++)
-        {
-            if (solutions[i] == 3 * (whoTurn + 1))
+            for (int i = 0; i < miniboard.Length; i++)
             {
-                WinnerDisplay();
-                return true;
+                miniboard[i].SetActive(true); // Enable the miniboard
+                miniboard[i].GetComponent<Image>().color = new Color(1, 1, 1, 1);
+                miniboard[i].GetComponent<Image>().sprite = gridHighlight;
+            }
 
+            miniboardID = new int[9];
+            for (int i = 0; i < miniboardID.Length; i++)
+            {
+                miniboardID[i] = -100;
             }
         }
-        return false;
-    }
 
-    void WinnerDisplay()
-    {
-        turnIcons[0].SetActive(false);
-        turnIcons[1].SetActive(false);
-
-        endPanel.gameObject.SetActive(true);
-
-        if (whoTurn == 0)
+        public void SwitchTurn()
         {
-            winningBoard[0].SetActive(true);
+            winnercheck();
+            TieCheck();
+
+            turnCount++;
+
+            for (int i = 0; i < miniboard.Length; i++)
+            {
+                if (miniboard[i].GetComponent<Image>().sprite == gridHighlight)
+                {
+                    miniboard[i].GetComponent<Image>().sprite = Empty;
+
+                }
+            }
+
+            if (miniboard[whichBoard].GetComponent<Image>().sprite == Empty && isTied[whichBoard] == 0)
+            {
+                miniboard[whichBoard].GetComponent<Image>().sprite = gridHighlight;
+
+            }
+
+            else
+            {
+                for (int i = 0; i < miniboard.Length; i++)
+                {
+                    if (miniboard[i].GetComponent<Image>().sprite == Empty && isTied[i] == 0)
+                    {
+                        miniboard[i].GetComponent<Image>().sprite = gridHighlight;
+                        allActive = true;
+                    }
+                }
+            }
+
+            if (whoTurn == 0)
+            {
+                whoTurn = 1;
+                turnIcons[0].SetActive(false);
+                turnIcons[1].SetActive(true);
+            }
+            else
+            {
+                whoTurn = 0;
+                turnIcons[0].SetActive(true);
+                turnIcons[1].SetActive(false);
+            }
+        }
+
+        public void MiniboardWinner(int winnerIndex)
+        {
+            miniboardID[winnerIndex] = whoTurn + 1;
+
+            if (whoTurn == 0)
+            {
+                miniboard[winnerIndex].GetComponent<Image>().sprite = miniboardWinner[0];
+                PlayWinSound();
+            }
+            else if (whoTurn == 1)
+            {
+                miniboard[winnerIndex].GetComponent<Image>().sprite = miniboardWinner[1];
+                PlayWinSound();
+            }
+        }
+        public void CreateDB()
+        {
+            using (var connection = new SqliteConnection(dbName))
+            {
+                connection.Open();
+
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = "CREATE TABLE IF NOT EXISTS SaveGame_" + GameID + "(TurnCount INTEGER, WhoTurn INTEGER, BoardID INTEGER, ButtonIndex INTEGER)";
+                    command.ExecuteNonQuery();
+                }
+
+                connection.Close();
+            }
+        }
+
+        public void SaveGameState(int sTurnCount, int sWhoTurn, int sBoardID, int sButtonIndex)
+        {
+            using var connection = new SqliteConnection(dbName);
+            {
+                connection.Open();
+
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = "INSERT INTO SaveGame_" + GameID + " (TurnCount, WhoTurn, BoardID, ButtonIndex) VALUES (@TurnCount, @WhoTurn, @BoardID, @ButtonIndex)";
+                    command.Parameters.AddWithValue("@TurnCount", sTurnCount);
+                    command.Parameters.AddWithValue("@WhoTurn", sWhoTurn);
+                    command.Parameters.AddWithValue("@BoardID", sBoardID);
+                    command.Parameters.AddWithValue("@ButtonIndex", sButtonIndex);
+                    command.ExecuteNonQuery();
+                }
+
+                connection.Close();
+            }
+        }
+
+        /*    public void DisplayDB()
+            {
+                using var connection = new SqliteConnection(dbName);
+                {
+                    connection.Open();
+
+                    using (var command = connection.CreateCommand())
+                    {
+                        command.CommandText = "SELECT * FROM SaveGame_" + GameID + "";
+                        using (var reader = command.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                Debug.Log(reader["TurnCount"] + " " + reader["WhoTurn"] + " " + reader["BoardID"] + " " + reader["ButtonIndex"]);
+                            }
+                        }
+                    }
+
+                    connection.Close();
+                }
+            }   */
+
+        public void PlayButtonSound()
+        {
+            buttonClickAudio.Play();
+        }
+
+        public void PlayWinSound()
+        {
             playerWinAudio.Play();
         }
-        else if (whoTurn == 1)
+
+        public void PlayLossSound()
         {
-            winningBoard[1].SetActive(true);
-            playerWinAudio.Play();
+            playerLossAudio.Play();
         }
 
-    }
+        public bool winnercheck()
+        {
+            int s1 = miniboardID[0] + miniboardID[1] + miniboardID[2];
+            int s2 = miniboardID[3] + miniboardID[4] + miniboardID[5];
+            int s3 = miniboardID[6] + miniboardID[7] + miniboardID[8];
+            int s4 = miniboardID[0] + miniboardID[3] + miniboardID[6];
+            int s5 = miniboardID[1] + miniboardID[4] + miniboardID[7];
+            int s6 = miniboardID[2] + miniboardID[5] + miniboardID[8];
+            int s7 = miniboardID[0] + miniboardID[4] + miniboardID[8];
+            int s8 = miniboardID[2] + miniboardID[4] + miniboardID[6];
 
-    void TieCheck()
-    {
-        if (isTied.All(x => x == 1))
+            var solutions = new int[] { s1, s2, s3, s4, s5, s6, s7, s8 };
+
+            for (int i = 0; i < solutions.Length; i++)
+            {
+                if (solutions[i] == 3 * (whoTurn + 1))
+                {
+                    WinnerDisplay();
+                    return true;
+
+                }
+            }
+            return false;
+        }
+
+        public void WinnerDisplay()
         {
             turnIcons[0].SetActive(false);
             turnIcons[1].SetActive(false);
 
             endPanel.gameObject.SetActive(true);
-            winningBoard[2].SetActive(true);
-            playerLossAudio.Play();
+
+            if (whoTurn == 0)
+            {
+                winningBoard[0].SetActive(true);
+                playerWinAudio.Play();
+            }
+            else if (whoTurn == 1)
+            {
+                winningBoard[1].SetActive(true);
+                playerWinAudio.Play();
+            }
+
         }
 
-    }
+        public void TieCheck()
+        {
+            if (isTied.All(x => x == 1))
+            {
+                turnIcons[0].SetActive(false);
+                turnIcons[1].SetActive(false);
 
-    public void Rematch()
-    {
-        GameSetup();
-        for (int i = 0; i < winningBoard.Length; i++)
-        {
-            winningBoard[i].SetActive(false);
-        }
-        for (int i = 0; i < miniboard.Length; i++)
-        {
-            miniboard[i].GetComponent<GameController>().MiniboardSetup();
+                endPanel.gameObject.SetActive(true);
+                winningBoard[2].SetActive(true);
+                playerLossAudio.Play();
+            }
+
         }
 
-        if (whoTurn == 1)
+        public void Rematch()
         {
+            GameSetup();
+            for (int i = 0; i < winningBoard.Length; i++)
+            {
+                winningBoard[i].SetActive(false);
+            }
+            for (int i = 0; i < miniboard.Length; i++)
+            {
+                miniboard[i].GetComponent<GameController>().MiniboardSetup();
+            }
+
+            if (whoTurn == 1)
+            {
+                turnIcons[0].SetActive(false);
+                turnIcons[1].SetActive(true);
+            }
+
+            else if (whoTurn == 0)
+            {
+                turnIcons[0].SetActive(true);
+                turnIcons[1].SetActive(false);
+            }
+
+            endPanel.gameObject.SetActive(false);
+        }
+
+        public void QuitGame()
+        {
+            Application.Quit();
+        }
+
+        public void Home()
+        {
+            GameSetup();
+
+            for (int i = 0; i < winningBoard.Length; i++)
+            {
+                winningBoard[i].SetActive(false);
+            }
+            for (int i = 0; i < miniboard.Length; i++)
+            {
+                miniboard[i].GetComponent<GameController>().MiniboardSetup();
+            }
+
+            homeUI.SetActive(true);
+            mainGrid.SetActive(false);
+            startPanel.SetActive(false);
+            endPanel.gameObject.SetActive(false);
             turnIcons[0].SetActive(false);
-            turnIcons[1].SetActive(true);
-        }
-
-        else if (whoTurn == 0)
-        {
-            turnIcons[0].SetActive(true);
             turnIcons[1].SetActive(false);
         }
 
-        endPanel.gameObject.SetActive(false);
     }
-
-    public void QuitGame()
-    {
-        Application.Quit();
-    }
-
-    public void Home()
-    {
-        GameSetup();
-
-        for (int i = 0; i < winningBoard.Length; i++)
-        {
-            winningBoard[i].SetActive(false);
-        }
-        for (int i = 0; i < miniboard.Length; i++)
-        {
-            miniboard[i].GetComponent<GameController>().MiniboardSetup();
-        }
-
-        homeUI.SetActive(true);
-        mainGrid.SetActive(false);
-        startPanel.SetActive(false);
-        endPanel.gameObject.SetActive(false);
-        turnIcons[0].SetActive(false);
-        turnIcons[1].SetActive(false);
-    }
-
 }
