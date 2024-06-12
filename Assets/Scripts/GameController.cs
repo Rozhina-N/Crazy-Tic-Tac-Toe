@@ -57,7 +57,10 @@ namespace CrazyTicTacToe
 
             markedSpaces[buttonIndex] = GameManager.instance.whoTurn + 1;
 
-            GameManager.instance.SaveGameState(GameManager.instance.turnCount, GameManager.instance.whoTurn, boardID, buttonIndex);
+            if (GameManager.instance.isReplay == false)
+            {
+                GameManager.instance.SaveGameState(GameManager.instance.turnCount, GameManager.instance.whoTurn, boardID, buttonIndex);
+            }
 
             bool isWinner = winnercheck();
 

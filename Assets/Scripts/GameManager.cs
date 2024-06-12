@@ -5,6 +5,9 @@ using System.Xml.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 using Mono.Data.Sqlite;
+using System.Text.RegularExpressions;
+using System;
+
 
 namespace CrazyTicTacToe
 {
@@ -19,8 +22,6 @@ namespace CrazyTicTacToe
         public int whichBoard; // which board is active
         public int[] isTied; // check if the game is tied
         public int GameID = 0; // game id
-        /*    public int sBoardID; // board id
-            public int sSpaceID; // space id*/
 
         public string dbName;
 
@@ -31,6 +32,9 @@ namespace CrazyTicTacToe
         public GameObject mainGrid; // main grid
         public GameObject startPanel; // start panel
         public GameObject homeUI; // home UI
+        public GameObject ReplayUI; // empty UI sprite
+        public GameObject buttonPrefab; // button prefab
+        public GameObject BlockInput; // block input
 
         public AudioSource buttonClickAudio; // button click sound
         public AudioSource playerWinAudio; // player win sound
@@ -39,8 +43,12 @@ namespace CrazyTicTacToe
         public Sprite gridHighlight; // highlight the miniboard
         public Sprite[] miniboardWinner; // miniboard winner sprite
         public Sprite Empty; // empty sprite
+        public Sprite EmptyButton; // empty button sprite
 
         public bool allActive = false;
+        public bool isReplay = false;
+
+        public List<string> replayList = new List<string>();
 
         private void Awake()
         {
@@ -61,11 +69,14 @@ namespace CrazyTicTacToe
 
         public void GameSetup()
         {
-            GameID++;
-            CreateDB();
+            if (isReplay == false)
+            {
+                CreateDB();
+            }
 
             homeUI.SetActive(false);
             startPanel.SetActive(false);
+            ReplayUI.SetActive(false);
             mainGrid.SetActive(true);
 
             turnCount = 0;
@@ -152,6 +163,8 @@ namespace CrazyTicTacToe
         }
         public void CreateDB()
         {
+            IncrementNumber(replayList.LastOrDefault());
+
             using (var connection = new SqliteConnection(dbName))
             {
                 connection.Open();
@@ -186,27 +199,21 @@ namespace CrazyTicTacToe
             }
         }
 
-        /*    public void DisplayDB()
+        public void IncrementNumber(string input)
+        {
+            var regex = new Regex(@"(\d+)$");
+            var match = regex.Match(input);
+
+            if (match.Success)
             {
-                using var connection = new SqliteConnection(dbName);
-                {
-                    connection.Open();
-
-                    using (var command = connection.CreateCommand())
-                    {
-                        command.CommandText = "SELECT * FROM SaveGame_" + GameID + "";
-                        using (var reader = command.ExecuteReader())
-                        {
-                            while (reader.Read())
-                            {
-                                Debug.Log(reader["TurnCount"] + " " + reader["WhoTurn"] + " " + reader["BoardID"] + " " + reader["ButtonIndex"]);
-                            }
-                        }
-                    }
-
-                    connection.Close();
-                }
-            }   */
+                int number = int.Parse(match.Value);
+                GameID = number + 1;
+            }
+            else
+            {
+                throw new ArgumentException("The input string does not end with a number.");
+            }
+        }
 
         public void PlayButtonSound()
         {
@@ -316,6 +323,7 @@ namespace CrazyTicTacToe
 
         public void Home()
         {
+            isReplay = true;
             GameSetup();
 
             for (int i = 0; i < winningBoard.Length; i++)
@@ -333,6 +341,30 @@ namespace CrazyTicTacToe
             endPanel.gameObject.SetActive(false);
             turnIcons[0].SetActive(false);
             turnIcons[1].SetActive(false);
+            isReplay = false;
+        }
+
+        public void More()
+        {
+            homeUI.SetActive(false);
+            ReplayUI.SetActive(true);
+
+            foreach (Transform child in ReplayUI.transform)
+            {
+                Destroy(child.gameObject);
+            }
+
+            ReplayManager.instance.ShowSaves();
+
+            foreach (string str in replayList)
+            {
+                GameObject button = Instantiate(buttonPrefab, ReplayUI.transform);
+                button.GetComponentInChildren<Text>().text = str;
+                button.GetComponent<Button>().onClick.AddListener(() => ReplayManager.instance.ReplayGame(replayList.IndexOf(str)));
+                
+            }
+
+
         }
 
     }
