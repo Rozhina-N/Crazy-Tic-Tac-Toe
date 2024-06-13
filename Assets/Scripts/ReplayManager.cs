@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using UnityEngine;
-using UnityEngine.Apple.ReplayKit;
 
 namespace CrazyTicTacToe
 {
@@ -112,6 +111,9 @@ public class ReplayManager : MonoBehaviour
 
         public void ReplayGame(int _replayID)
         {
+            GameManager.instance.isReplay = true;
+            GameManager.instance.BlockInput.SetActive(true);
+            replayTurns.Clear();
             LoadGameStates(_replayID);
             GameManager.instance.GameSetup();
             StartCoroutine(ReplayGameCoroutine());
@@ -119,16 +121,12 @@ public class ReplayManager : MonoBehaviour
 
         public IEnumerator ReplayGameCoroutine()
         {
-            GameManager.instance.isReplay = true;
-            GameManager.instance.BlockInput.SetActive(true);
-
             for (int i = 0; i < replayTurns.Count; i++)
             {
                 GameManager.instance.miniboard[replayTurns[i].boardID].GetComponent<GameController>().TicTacToeButton(replayTurns[i].buttonIndex);
 
                 yield return new WaitForSeconds(0.2f);
             }
-            replayTurns.Clear();
             GameManager.instance.isReplay = false;
             GameManager.instance.BlockInput.SetActive(false);
         }

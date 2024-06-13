@@ -21,7 +21,7 @@ namespace CrazyTicTacToe
         public int[] miniboardID; // board id
         public int whichBoard; // which board is active
         public int[] isTied; // check if the game is tied
-        public int GameID = 0; // game id
+        public int GameID = 1; // game id
 
         public string dbName;
 
@@ -43,7 +43,8 @@ namespace CrazyTicTacToe
         public Sprite gridHighlight; // highlight the miniboard
         public Sprite[] miniboardWinner; // miniboard winner sprite
         public Sprite Empty; // empty sprite
-        public Sprite EmptyButton; // empty button sprite
+        
+        public GameObject QuitButton; // quit button
 
         public bool allActive = false;
         public bool isReplay = false;
@@ -69,11 +70,6 @@ namespace CrazyTicTacToe
 
         public void GameSetup()
         {
-            if (isReplay == false)
-            {
-                CreateDB();
-            }
-
             homeUI.SetActive(false);
             startPanel.SetActive(false);
             ReplayUI.SetActive(false);
@@ -95,6 +91,11 @@ namespace CrazyTicTacToe
             for (int i = 0; i < miniboardID.Length; i++)
             {
                 miniboardID[i] = -100;
+            }
+
+            if (isReplay == false)
+            {
+                CreateDB();
             }
         }
 
@@ -202,13 +203,21 @@ namespace CrazyTicTacToe
         public void IncrementNumber(string input)
         {
             var regex = new Regex(@"(\d+)$");
-            var match = regex.Match(input);
 
+            if (input == null)
+            {
+                GameID = 1;
+                return;
+            }
+
+            var match = regex.Match(input);
+            
             if (match.Success)
             {
                 int number = int.Parse(match.Value);
                 GameID = number + 1;
             }
+
             else
             {
                 throw new ArgumentException("The input string does not end with a number.");
@@ -360,7 +369,7 @@ namespace CrazyTicTacToe
             {
                 GameObject button = Instantiate(buttonPrefab, ReplayUI.transform);
                 button.GetComponentInChildren<Text>().text = str;
-                button.GetComponent<Button>().onClick.AddListener(() => ReplayManager.instance.ReplayGame(replayList.IndexOf(str)));
+                button.GetComponent<Button>().onClick.AddListener(() => ReplayManager.instance.ReplayGame(replayList.IndexOf(str) + 1));
                 
             }
 
